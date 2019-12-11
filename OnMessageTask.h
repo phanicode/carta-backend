@@ -18,7 +18,6 @@
 class OnMessageTask : public tbb::task {
 protected:
     Session* _session;
-    tbb::task* execute() override = 0;
 
 public:
     OnMessageTask(Session* session) {
@@ -30,6 +29,7 @@ public:
             delete _session;
         _session = nullptr;
     }
+    tbb::task* execute() {}
 };
 
 class MultiMessageTask : public OnMessageTask {
