@@ -907,20 +907,19 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
 
             auto num_subsets = std::min(num_subsets_setting, MAX_SUBSETS);
 
-#pragma omp parallel for 	    
-	    for (int i = 0; i != num_subsets; ++i) {
-	      int subset_row_start = i * (num_rows / num_subsets);
-                    int subset_row_end = (i + 1) * (num_rows / num_subsets);
-                    if (i == num_subsets - 1) {
-                        subset_row_end = num_rows;
-                    }
-                    int subset_element_start = subset_row_start * row_length;
-                    int subset_element_end = subset_row_end * row_length;
-                    nan_encodings[i] =
-                        GetNanEncodingsBlock(image_data, subset_element_start, row_length, subset_row_end - subset_row_start);
-                    Compress(image_data, subset_element_start, compression_buffers[i], compressed_sizes[i], row_length,
-                        subset_row_end - subset_row_start, precision);
-                }	    
+#pragma omp parallel for
+            for (int i = 0; i != num_subsets; ++i) {
+                int subset_row_start = i * (num_rows / num_subsets);
+                int subset_row_end = (i + 1) * (num_rows / num_subsets);
+                if (i == num_subsets - 1) {
+                    subset_row_end = num_rows;
+                }
+                int subset_element_start = subset_row_start * row_length;
+                int subset_element_end = subset_row_end * row_length;
+                nan_encodings[i] = GetNanEncodingsBlock(image_data, subset_element_start, row_length, subset_row_end - subset_row_start);
+                Compress(image_data, subset_element_start, compression_buffers[i], compressed_sizes[i], row_length,
+                    subset_row_end - subset_row_start, precision);
+            }
 
             // Complete message
             for (auto i = 0; i < num_subsets_setting; i++) {
@@ -972,37 +971,37 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-#pragma omp parallel for 	
-	for (size_t j = 0; j != num_rows_region; ++j) {
-	  for (size_t i = 0; i != row_length_region; ++i) {
-	    float pixel_sum = 0;
-	    int pixel_count = 0;
-	    size_t image_row = y + (j * mip);
-	    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-	      size_t image_col = x + (i * mip);
-	      for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-		float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-		if (std::isfinite(pix_val)) {
-		  pixel_count++;
-		  pixel_sum += pix_val;
-		}
-		image_col++;
-	      }
-	      image_row++;
-	    }
-	    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
-	  }
-	}
+#pragma omp parallel for
+        for (size_t j = 0; j != num_rows_region; ++j) {
+            for (size_t i = 0; i != row_length_region; ++i) {
+                float pixel_sum = 0;
+                int pixel_count = 0;
+                size_t image_row = y + (j * mip);
+                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                    size_t image_col = x + (i * mip);
+                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
+                        if (std::isfinite(pix_val)) {
+                            pixel_count++;
+                            pixel_sum += pix_val;
+                        }
+                        image_col++;
+                    }
+                    image_row++;
+                }
+                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            }
+        }
     } else {
         // Nearest neighbour filtering
-#pragma omp parallel for 	
-	  for (size_t j = 0; j != num_rows_region; ++j) {
-	    for (auto i = 0; i < row_length_region; i++) {
-	      auto image_row = y + j * mip;
-	      auto image_col = x + i * mip;
-	      image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-	    }
-	  }	
+#pragma omp parallel for
+        for (size_t j = 0; j != num_rows_region; ++j) {
+            for (auto i = 0; i < row_length_region; i++) {
+                auto image_row = y + j * mip;
+                auto image_col = x + i * mip;
+                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
+            }
+        }
     }
     return true;
 }
