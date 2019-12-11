@@ -1,7 +1,7 @@
 #include "Frame.h"
 
 #include <tbb/blocked_range2d.h>
-#include <tbb/parallel_for.h>
+//#include <tbb/parallel_for.h>
 
 #include <algorithm>
 #include <fstream>
@@ -906,10 +906,10 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             std::vector<std::vector<int32_t>> nan_encodings(num_subsets_setting);
 
             auto num_subsets = std::min(num_subsets_setting, MAX_SUBSETS);
-            auto range = tbb::blocked_range<int>(0, num_subsets);
-            auto loop = [&](const tbb::blocked_range<int>& r) {
-                for (int i = r.begin(); i != r.end(); ++i) {
-                    int subset_row_start = i * (num_rows / num_subsets);
+
+#pragma omp parallel for 	    
+	    for (int i = 0; i != num_subsets; ++i) {
+	      int subset_row_start = i * (num_rows / num_subsets);
                     int subset_row_end = (i + 1) * (num_rows / num_subsets);
                     if (i == num_subsets - 1) {
                         subset_row_end = num_rows;
@@ -920,9 +920,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
                         GetNanEncodingsBlock(image_data, subset_element_start, row_length, subset_row_end - subset_row_start);
                     Compress(image_data, subset_element_start, compression_buffers[i], compressed_sizes[i], row_length,
                         subset_row_end - subset_row_start, precision);
-                }
-            };
-            tbb::parallel_for(range, loop);
+                }	    
 
             // Complete message
             for (auto i = 0; i < num_subsets_setting; i++) {
@@ -974,43 +972,37 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
-            for (size_t j = r.begin(); j != r.end(); ++j) {
-                for (size_t i = 0; i != row_length_region; ++i) {
-                    float pixel_sum = 0;
-                    int pixel_count = 0;
-                    size_t image_row = y + (j * mip);
-                    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                        size_t image_col = x + (i * mip);
-                        for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                            float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                            if (std::isfinite(pix_val)) {
-                                pixel_count++;
-                                pixel_sum += pix_val;
-                            }
-                            image_col++;
-                        }
-                        image_row++;
-                    }
-                    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
-                }
-            }
-        };
-        tbb::parallel_for(range, loop);
+#pragma omp parallel for 	
+	for (size_t j = 0; j != num_rows_region; ++j) {
+	  for (size_t i = 0; i != row_length_region; ++i) {
+	    float pixel_sum = 0;
+	    int pixel_count = 0;
+	    size_t image_row = y + (j * mip);
+	    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+	      size_t image_col = x + (i * mip);
+	      for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+		float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
+		if (std::isfinite(pix_val)) {
+		  pixel_count++;
+		  pixel_sum += pix_val;
+		}
+		image_col++;
+	      }
+	      image_row++;
+	    }
+	    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+	  }
+	}
     } else {
         // Nearest neighbour filtering
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
-            for (size_t j = r.begin(); j != r.end(); ++j) {
-                for (auto i = 0; i < row_length_region; i++) {
-                    auto image_row = y + j * mip;
-                    auto image_col = x + i * mip;
-                    image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-                }
-            }
-        };
-        tbb::parallel_for(range, loop);
+#pragma omp parallel for 	
+	  for (size_t j = 0; j != num_rows_region; ++j) {
+	    for (auto i = 0; i < row_length_region; i++) {
+	      auto image_row = y + j * mip;
+	      auto image_col = x + i * mip;
+	      image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
+	    }
+	  }	
     }
     return true;
 }
