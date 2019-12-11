@@ -40,9 +40,10 @@ int global_thread_count = 0;
 // key is current folder
 unordered_map<string, vector<string>> permissions_map;
 
-tbb::concurrent_queue<OnMessageTask *> _task_queue;
+tbb::concurrent_queue<OnMessageTask*> _task_queue;
 std::mutex _task_queue_mtx;
 std::condition_variable _task_queue_cv;
+std::thread* _animation_thread;
 
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
@@ -225,8 +226,9 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
-			tbb::task::enqueue(*tsk);
-			tsk = nullptr;
+                        auto animation_lambda = [&](OnMessageTask* omt) { omt->execute(); };
+                        _animation_thread = new std::thread(animation_lambda, tsk);
+                        tsk = nullptr;
                     } else {
                         fmt::print("Bad START_ANIMATION message!\n");
                     }
@@ -334,10 +336,10 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             }
 
             if (tsk) {
-	      //                tbb::task::enqueue(*tsk);
-	      std::unique_lock<std::mutex> lock(_task_queue_mtx);
-	      _task_queue.push(tsk);
-	      _task_queue_cv.notify_one();
+                //                tbb::task::enqueue(*tsk);
+                std::unique_lock<std::mutex> lock(_task_queue_mtx);
+                _task_queue.push(tsk);
+                _task_queue_cv.notify_one();
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
@@ -443,21 +445,20 @@ int main(int argc, const char* argv[]) {
         if (use_permissions) {
             ReadPermissions("permissions.txt", permissions_map);
         }
-	
-	auto thread_lambda = []() {
-	  OnMessageTask * tsk;
-	  do {
-	    std::unique_lock<std::mutex> lock(_task_queue_mtx);
-	    if( !(_task_queue.try_pop(tsk)) ) {
-	      _task_queue_cv.wait(lock);
-	    }
-	    else {
-	      tsk->execute();
-	    }	    
-	  } while(true);
-	};
-	std::thread worker_thread(thread_lambda);
-	
+
+        auto thread_lambda = []() {
+            OnMessageTask* tsk;
+            do {
+                std::unique_lock<std::mutex> lock(_task_queue_mtx);
+                if (!(_task_queue.try_pop(tsk))) {
+                    _task_queue_cv.wait(lock);
+                } else {
+                    tsk->execute();
+                }
+            } while (true);
+        };
+        std::thread worker_thread(thread_lambda);
+
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(permissions_map, use_permissions, root_folder, base_folder);
 
