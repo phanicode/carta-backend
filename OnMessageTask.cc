@@ -101,18 +101,23 @@ tbb::task* SetHistogramRequirementsTask::execute() {
 }
 
 tbb::task* AnimationTask::execute() {
-    if (_session->ExecuteAnimationFrame()) {
-        if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
-            _session->SetWaitingTask(true);
+    bool loop;
+    do {
+        loop = false;
+        if (_session->ExecuteAnimationFrame()) {
+            if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
+                _session->SetWaitingTask(true);
+            } else {
+                //            increment_ref_count();
+                //            recycle_as_safe_continuation();
+                loop = true;
+            }
         } else {
-            increment_ref_count();
-            recycle_as_safe_continuation();
+            if (!_session->WaitingFlowEvent()) {
+                _session->CancelAnimation();
+            }
         }
-    } else {
-        if (!_session->WaitingFlowEvent()) {
-            _session->CancelAnimation();
-        }
-    }
+    } while (loop);
 
     return nullptr;
 }
