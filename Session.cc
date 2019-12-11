@@ -7,7 +7,7 @@
 #include <memory>
 #include <thread>
 
-#include <tbb/parallel_for.h>
+//#include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
 
 #include <casacore/casa/OS/File.h>
@@ -387,11 +387,10 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             }
         };
 
-        tbb::task_group g;
-        for (int j = 0; j < stride; j++) {
-            g.run([=] { lambda(j); });
-        }
-        g.wait();
+#pragma omp parallel for
+	for (int j = 0; j < stride; j++) {
+	  lambda(j);
+	}
     }
 }
 
