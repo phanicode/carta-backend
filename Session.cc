@@ -388,9 +388,9 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
         };
 
 #pragma omp parallel for
-	for (int j = 0; j < stride; j++) {
-	  lambda(j);
-	}
+        for (int j = 0; j < stride; j++) {
+            lambda(j);
+        }
     }
 }
 
