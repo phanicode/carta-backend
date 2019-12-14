@@ -6,11 +6,7 @@
 #include <limits>
 #include <memory>
 #include <thread>
-
-
 #include <omp.h>
-//#include <tbb/parallel_for.h>
-#include <tbb/task_group.h>
 
 #include <casacore/casa/OS/File.h>
 
@@ -31,6 +27,9 @@
 
 #define DEBUG(_DB_TEXT_) \
     {}
+
+extern void queue_task(OnMessageTask*);
+
 
 int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
@@ -1439,7 +1438,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
             OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
-            tbb::task::enqueue(*tsk);
+	    queue_task(tsk);
         }
     }
 }
