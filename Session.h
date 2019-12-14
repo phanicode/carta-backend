@@ -12,9 +12,7 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
-#include <tbb/concurrent_unordered_map.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/aips.h>
