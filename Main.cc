@@ -11,6 +11,7 @@
 #include <tuple>
 #include <vector>
 
+#include <omp.h>
 #include <condition_variable>
 #include <mutex>
 
@@ -19,7 +20,6 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
-#include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/Inputs/Input.h>
@@ -336,7 +336,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             }
 
             if (tsk) {
-                //                tbb::task::enqueue(*tsk);
                 std::unique_lock<std::mutex> lock(_task_queue_mtx);
                 _task_queue.push(tsk);
                 _task_queue_cv.notify_one();
@@ -386,7 +385,8 @@ int main(int argc, const char* argv[]) {
 
         // define and get input arguments
         int port(3002);
-        int thread_count(tbb::task_scheduler_init::default_num_threads());
+        int thread_count = 2;
+        // tbb::task_scheduler_init::default_num_threads());
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;
@@ -440,7 +440,8 @@ int main(int argc, const char* argv[]) {
         }
 
         // Construct task scheduler, permissions
-        tbb::task_scheduler_init task_scheduler(thread_count);
+        //        tbb::task_scheduler_init task_scheduler(thread_count);
+       	omp_set_num_threads(thread_count);
         CARTA::global_thread_count = thread_count;
         if (use_permissions) {
             ReadPermissions("permissions.txt", permissions_map);
@@ -457,7 +458,12 @@ int main(int argc, const char* argv[]) {
                 }
             } while (true);
         };
-        std::thread worker_thread(thread_lambda);
+	// Hardcoded number of worker threads for initial testing.
+	// Should update this to be set from command line.
+        std::thread worker_thread1(thread_lambda);
+	std::thread worker_thread2(thread_lambda);
+	std::thread worker_thread3(thread_lambda);
+	std::thread worker_thread4(thread_lambda);
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(permissions_map, use_permissions, root_folder, base_folder);
