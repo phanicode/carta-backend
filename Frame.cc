@@ -908,7 +908,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             auto num_subsets = std::min(num_subsets_setting, MAX_SUBSETS);
 
 #pragma omp parallel for
-            for (int i = 0; i != num_subsets; ++i) {
+            for (int i = 0; i < num_subsets; ++i) {
                 int subset_row_start = i * (num_rows / num_subsets);
                 int subset_row_end = (i + 1) * (num_rows / num_subsets);
                 if (i == num_subsets - 1) {
@@ -972,7 +972,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
 #pragma omp parallel for
-        for (size_t j = 0; j != num_rows_region; ++j) {
+        for (size_t j = 0; j < num_rows_region; ++j) {
             for (size_t i = 0; i != row_length_region; ++i) {
                 float pixel_sum = 0;
                 int pixel_count = 0;
@@ -995,7 +995,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     } else {
         // Nearest neighbour filtering
 #pragma omp parallel for
-        for (size_t j = 0; j != num_rows_region; ++j) {
+        for (size_t j = 0; j < num_rows_region; ++j) {
             for (auto i = 0; i < row_length_region; i++) {
                 auto image_row = y + j * mip;
                 auto image_col = x + i * mip;
