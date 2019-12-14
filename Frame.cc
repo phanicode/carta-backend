@@ -1,8 +1,5 @@
 #include "Frame.h"
 
-#include <tbb/blocked_range2d.h>
-//#include <tbb/parallel_for.h>
-
 #include <algorithm>
 #include <fstream>
 #include <thread>
