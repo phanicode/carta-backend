@@ -17,8 +17,6 @@
 
 #include <fmt/format.h>
 #include <signal.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
 #include <uWS/uWS.h>
 
@@ -32,6 +30,8 @@
 #include "Session.h"
 #include "Util.h"
 
+extern void queue_task(OnMessageTask*);
+
 using namespace std;
 
 namespace CARTA {
@@ -40,9 +40,9 @@ int global_thread_count = 0;
 // key is current folder
 unordered_map<string, vector<string>> permissions_map;
 
-tbb::concurrent_queue<OnMessageTask*> _task_queue;
-std::mutex _task_queue_mtx;
-std::condition_variable _task_queue_cv;
+std::list<OnMessageTask*> __task_queue;
+std::mutex __task_queue_mtx;
+std::condition_variable __task_queue_cv;
 std::thread* _animation_thread;
 
 // file list handler for the file browser
@@ -336,9 +336,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             }
 
             if (tsk) {
-                std::unique_lock<std::mutex> lock(_task_queue_mtx);
-                _task_queue.push(tsk);
-                _task_queue_cv.notify_one();
+	      queue_task(tsk);
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
@@ -372,6 +370,13 @@ void ReadJsonFile(const string& fname) {
     std::cerr << "Not configured to use JSON." << std::endl;
 #endif
 }
+
+void queue_task(OnMessageTask * tsk){
+  std::unique_lock<std::mutex> lock(__task_queue_mtx);
+  __task_queue.push_back(tsk);
+  __task_queue_cv.notify_one();
+}
+
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
@@ -450,9 +455,9 @@ int main(int argc, const char* argv[]) {
         auto thread_lambda = []() {
             OnMessageTask* tsk;
             do {
-                std::unique_lock<std::mutex> lock(_task_queue_mtx);
-                if (!(_task_queue.try_pop(tsk))) {
-                    _task_queue_cv.wait(lock);
+                std::unique_lock<std::mutex> lock(__task_queue_mtx);
+                if (!(tsk = __task_queue.front())) {
+                    __task_queue_cv.wait(lock);
                 } else {
                     tsk->execute();
                 }
