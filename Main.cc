@@ -203,8 +203,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new
-                                SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                            tsk = new SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
                         fmt::print("Bad SET_HISTOGRAM_REQUIREMENTS message!\n");
@@ -459,6 +458,7 @@ int main(int argc, const char* argv[]) {
                     __task_queue_cv.wait(lock);
                 } else {
                     __task_queue.pop_front();
+                    lock.unlock();
                     tsk->execute();
                 }
             } while (true);
