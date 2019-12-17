@@ -167,7 +167,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock();
                         if (!session->ImageChannelTaskTestAndSet()) {
-                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session);
+                            tsk = new SetImageChannelsTask(session);
                         }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -190,7 +190,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->AddCursorSetting(message, head.request_id);
-                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                        tsk = new SetCursorTask(session, message.file_id());
                     } else {
                         fmt::print("Bad SET_CURSOR message!\n");
                     }
@@ -282,7 +282,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    tsk = new OnAddRequiredTilesTask(session, message);
                     break;
                 }
                 case CARTA::EventType::REGION_LIST_REQUEST: {
@@ -324,14 +324,14 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
+                    tsk = new OnSetContourParametersTask(session, message);
                     break;
                 }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
                     memcpy(message_buffer, event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
+                    tsk = new MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
