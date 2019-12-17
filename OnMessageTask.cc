@@ -9,7 +9,7 @@
 #include "EventHeader.h"
 #include "Util.h"
 
-tbb::task* MultiMessageTask::execute() {
+OnMessageTask* MultiMessageTask::execute() {
     switch (_header.type) {
         case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
             CARTA::SetSpatialRequirements message;
@@ -65,7 +65,7 @@ tbb::task* MultiMessageTask::execute() {
     return nullptr;
 }
 
-tbb::task* SetImageChannelsTask::execute() {
+OnMessageTask* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
 
@@ -81,17 +81,17 @@ tbb::task* SetImageChannelsTask::execute() {
     return nullptr;
 }
 
-tbb::task* SetImageViewTask::execute() {
+OnMessageTask* SetImageViewTask::execute() {
     _session->_file_settings.ExecuteOne("SET_IMAGE_VIEW", _file_id);
     return nullptr;
 }
 
-tbb::task* SetCursorTask::execute() {
+OnMessageTask* SetCursorTask::execute() {
     _session->_file_settings.ExecuteOne("SET_CURSOR", _file_id);
     return nullptr;
 }
 
-tbb::task* SetHistogramRequirementsTask::execute() {
+OnMessageTask* SetHistogramRequirementsTask::execute() {
     CARTA::SetHistogramRequirements message;
     if (message.ParseFromArray(_event_buffer, _event_length)) {
         _session->OnSetHistogramRequirements(message, _header.request_id);
@@ -100,7 +100,7 @@ tbb::task* SetHistogramRequirementsTask::execute() {
     return nullptr;
 }
 
-tbb::task* AnimationTask::execute() {
+OnMessageTask* AnimationTask::execute() {
     bool loop;
     do {
         loop = false;
@@ -122,12 +122,12 @@ tbb::task* AnimationTask::execute() {
     return nullptr;
 }
 
-tbb::task* OnAddRequiredTilesTask::execute() {
+OnMessageTask* OnAddRequiredTilesTask::execute() {
     _session->OnAddRequiredTiles(_message);
     return nullptr;
 }
 
-tbb::task* OnSetContourParametersTask::execute() {
+OnMessageTask* OnSetContourParametersTask::execute() {
     _session->OnSetContourParameters(_message);
     return nullptr;
 }

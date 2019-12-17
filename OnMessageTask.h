@@ -15,7 +15,7 @@
 #include "EventHeader.h"
 #include "Session.h"
 
-class OnMessageTask : public tbb::task {
+class OnMessageTask {
 protected:
     Session* _session;
 
@@ -29,14 +29,14 @@ public:
             delete _session;
         _session = nullptr;
     }
-    tbb::task* execute() {}
+    virtual OnMessageTask* execute() = 0;
 };
 
 class MultiMessageTask : public OnMessageTask {
     carta::EventHeader _header;
     int _event_length;
     char* _event_buffer;
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
 
 public:
     MultiMessageTask(Session* session_, carta::EventHeader& head, int evt_len, char* event_buf) : OnMessageTask(session_) {
@@ -50,7 +50,7 @@ public:
 };
 
 class SetImageChannelsTask : public OnMessageTask {
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
 
 public:
     SetImageChannelsTask(Session* session) : OnMessageTask(session) {}
@@ -59,7 +59,7 @@ public:
 
 class SetImageViewTask : public OnMessageTask {
     int _file_id;
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
 
 public:
     SetImageViewTask(Session* session, int file_id) : OnMessageTask(session) {
@@ -70,7 +70,7 @@ public:
 
 class SetCursorTask : public OnMessageTask {
     int _file_id;
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
 
 public:
     SetCursorTask(Session* session, int file_id) : OnMessageTask(session) {
@@ -80,7 +80,7 @@ public:
 };
 
 class SetHistogramRequirementsTask : public OnMessageTask {
-    tbb::task* execute();
+    OnMessageTask* execute();
     carta::EventHeader _header;
     int _event_length;
     char* _event_buffer;
@@ -95,7 +95,7 @@ public:
 };
 
 class AnimationTask : public OnMessageTask {
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
 
 public:
     AnimationTask(Session* session) : OnMessageTask(session) {}
@@ -103,7 +103,7 @@ public:
 };
 
 class OnAddRequiredTilesTask : public OnMessageTask {
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
     CARTA::AddRequiredTiles _message;
     int _start, _stride, _end;
 
@@ -115,7 +115,7 @@ public:
 };
 
 class OnSetContourParametersTask : public OnMessageTask {
-    tbb::task* execute() override;
+    OnMessageTask* execute() override;
     CARTA::SetContourParameters _message;
     int _start, _stride, _end;
 
