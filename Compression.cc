@@ -145,11 +145,12 @@ void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t
     int i = 0;
 
     const int blocked_length = 4 * (num_values / 4);
+    const __m128 rfv = _mm_set1_ps(rounding_factor);
     // Run through the vertices in groups of 4, rounding to the nearest Nth of a pixel
     for (i = 0; i < blocked_length; i += 4) {
         __m128 vertices_vector = _mm_loadu_ps(&array[i]);
         // If we prefer truncation, then _mm_cvttps_epi32 should be used instead
-        __m128i rounded_vals = _mm_cvtps_epi32(vertices_vector * rounding_factor);
+	__m128i rounded_vals = __m128i(_mm_mul_ps(vertices_vector, rfv));
         _mm_store_si128((__m128i*)&dest[i], rounded_vals);
     }
 
