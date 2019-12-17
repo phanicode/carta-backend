@@ -203,7 +203,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new (tbb::task::allocate_root(session->HistContext()))
+                            tsk = new
                                 SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
@@ -225,7 +225,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
-                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                        tsk = new AnimationTask(session);
                         auto animation_lambda = [&](OnMessageTask* omt) { omt->execute(); };
                         _animation_thread = new std::thread(animation_lambda, tsk);
                         tsk = nullptr;
