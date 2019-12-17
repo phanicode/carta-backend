@@ -150,7 +150,7 @@ void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t
     for (i = 0; i < blocked_length; i += 4) {
         __m128 vertices_vector = _mm_loadu_ps(&array[i]);
         // If we prefer truncation, then _mm_cvttps_epi32 should be used instead
-	__m128i rounded_vals = __m128i(_mm_mul_ps(vertices_vector, rfv));
+        __m128i rounded_vals = __m128i(_mm_mul_ps(vertices_vector, rfv));
         _mm_store_si128((__m128i*)&dest[i], rounded_vals);
     }
 
