@@ -1,7 +1,6 @@
 #ifndef CARTA_BACKEND__ANIMATIONOBJECT_H_
 #define CARTA_BACKEND__ANIMATIONOBJECT_H_
 
-#include <tbb/task.h>
 #include <chrono>
 #include <iostream>
 
