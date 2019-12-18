@@ -1438,7 +1438,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
+            OnMessageTask* tsk = new AnimationTask(this);
             queue_task(tsk);
         }
     }
