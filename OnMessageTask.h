@@ -9,7 +9,6 @@
 
 #include <carta-protobuf/contour.pb.h>
 #include <tbb/concurrent_queue.h>
-#include <tbb/task.h>
 
 #include "AnimationObject.h"
 #include "EventHeader.h"

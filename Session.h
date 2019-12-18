@@ -30,8 +30,6 @@
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include <tbb/task.h>
-
 #include "AnimationObject.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
