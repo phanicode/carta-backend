@@ -11,7 +11,7 @@
 
 #include <carta-protobuf/spectral_profile.pb.h>
 
-#include <tbb/atomic.h>
+#include <atomic>
 #include <thread>
 
 #include "../InterfaceConstants.h"
@@ -235,7 +235,7 @@ private:
     volatile bool _connected = true;
 
     // Spectral profile counter, which is used to determine whether the Region object can be destroyed (_z_profile_count == 0 ?).
-    tbb::atomic<int> _z_profile_count;
+    std::atomic_int _z_profile_count;
 
     // Map of stats cache: "stoke index" vs. {"stats type" vs. ["stats values", "channel end"]}
     std::map<int, std::map<CARTA::StatsType, StatsCacheData>> _stats_cache;
