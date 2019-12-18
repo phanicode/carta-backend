@@ -8,6 +8,8 @@
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 
+#include "SessionContext.h"
+
 namespace CARTA {
 const int AnimationFlowWindowConstant = 5;
 const int AnimationFlowWindowScaler = 2;
@@ -37,7 +39,7 @@ class AnimationObject {
     int _wait_duration_ms;
     volatile int _file_open;
     volatile bool _waiting_flow_event;
-    tbb::task_group_context _tbb_context;
+    SessionContext _tbb_context;
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,

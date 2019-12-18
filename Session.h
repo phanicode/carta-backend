@@ -38,6 +38,7 @@
 #include "FileSettings.h"
 #include "Frame.h"
 #include "Util.h"
+#include "SessionContext.h"
 
 class Session {
 public:
@@ -87,10 +88,10 @@ public:
     void ResetHistContext() {
         _histogram_context.reset();
     }
-    tbb::task_group_context& HistContext() {
+    SessionContext& HistContext() {
         return _histogram_context;
     }
-    tbb::task_group_context& AnimationContext() {
+    SessionContext& AnimationContext() {
         return _animation_context;
     }
     void CancelAnimation() {
@@ -137,7 +138,7 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
-    tbb::task_group_context& Context() {
+    SessionContext& Context() {
         return _base_context;
     }
     void SetWaitingTask(bool set_wait) {
@@ -227,12 +228,12 @@ private:
     tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
 
     // TBB context that enables all tasks associated with a session to be cancelled.
-    tbb::task_group_context _base_context;
+    SessionContext _base_context;
 
     // TBB context to cancel histogram calculations.
-    tbb::task_group_context _histogram_context;
+    SessionContext _histogram_context;
 
-    tbb::task_group_context _animation_context;
+    SessionContext _animation_context;
 
     int _ref_count;
     bool _connected;
