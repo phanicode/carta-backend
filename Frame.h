@@ -12,7 +12,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <imageanalysis/IO/AsciiAnnotationFileLine.h>
-#include <tbb/atomic.h>
+#include <atomic>
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/contour.pb.h>
@@ -238,7 +238,7 @@ private:
     std::string _open_image_error;
 
     // spectral profile counter, which is used to determine whether the Frame object can be destroyed (_z_profile_count == 0 ?).
-    tbb::atomic<int> _z_profile_count;
+    std::atomic_int _z_profile_count;
 
     // image loader for image type
     std::unique_ptr<carta::FileLoader> _loader;
