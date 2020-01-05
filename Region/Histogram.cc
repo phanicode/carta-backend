@@ -5,6 +5,7 @@
 #include <omp.h>
 
 #include <tbb/parallel_reduce.h>
+#include <tbb/parallel_for.h>
 
 using namespace carta;
 
