@@ -18,7 +18,6 @@
 
 #include <fmt/format.h>
 #include <signal.h>
-#include <tbb/task.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/Inputs/Input.h>
