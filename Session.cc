@@ -1282,7 +1282,7 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
             auto channel = curr_frame.channel();
             auto stokes = curr_frame.stokes();
 
-            if ((_animation_object->_tbb_context).is_group_execution_cancelled()) {
+            if ((_animation_object->_context).is_group_execution_cancelled()) {
                 return;
             }
 

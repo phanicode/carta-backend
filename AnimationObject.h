@@ -38,7 +38,7 @@ class AnimationObject {
     int _wait_duration_ms;
     volatile int _file_open;
     volatile bool _waiting_flow_event;
-    SessionContext _tbb_context;
+    SessionContext _context;
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
@@ -77,10 +77,10 @@ public:
         return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
     }
     void CancelExecution() {
-        _tbb_context.cancel_group_execution();
+        _context.cancel_group_execution();
     }
     void ResetContext() {
-        _tbb_context.reset();
+        _context.reset();
     }
 };
 
