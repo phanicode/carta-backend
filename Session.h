@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <tbb/concurrent_queue.h>
+//#include <tbb/concurrent_queue.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/aips.h>
@@ -37,6 +37,7 @@
 #include "Frame.h"
 #include "Util.h"
 #include "SessionContext.h"
+#include "Concurrency.h"
 
 class Session {
 public:
@@ -73,7 +74,8 @@ public:
         // Empty current queue first.
         while (_set_channel_queue.try_pop(rp)) {
         }
-        _set_channel_queue.push(std::make_pair(message, request_id));
+		rp = std::make_pair(message, request_id);
+        _set_channel_queue.push(rp);
     }
 
     // Task handling
@@ -161,8 +163,8 @@ public:
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
-
+	//    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
+	concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
 private:
     // File info
     void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
@@ -223,8 +225,9 @@ private:
 
     // Outgoing messages
     uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
-    tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
-
+	//tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+	concurrent_queue<std::vector<char>> _out_msgs;
+	
     // TBB context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;
 
