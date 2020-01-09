@@ -9,10 +9,10 @@
 #include <imageanalysis/Annotations/RegionTextList.h>
 
 #include "Compression.h"
+#include "Concurrency.h"
 #include "Contouring.h"
 #include "Ds9Parser.h"
 #include "Smoothing.h"
-#include "Concurrency.h"
 
 using namespace carta;
 
@@ -739,9 +739,9 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
 
 bool Frame::SetImageCache() {
     // get image data for channel, stokes
-	//    bool write_lock(true);
-	//    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-	rw_mutex_writer cache_lock(_cache_mutex);
+    //    bool write_lock(true);
+    //    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+    rw_mutex_writer cache_lock(_cache_mutex);
     try {
         _image_cache.resize(_image_shape(0) * _image_shape(1));
     } catch (std::bad_alloc& alloc_error) {
@@ -995,10 +995,10 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     int num_image_columns = _image_shape(0);
 
     // read lock imageCache
-	//    bool write_lock(false);
-	//    tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
-	rw_mutex_reader lock(_cache_mutex);
-	
+    //    bool write_lock(false);
+    //    tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
+    rw_mutex_reader lock(_cache_mutex);
+
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
 #pragma omp parallel for
@@ -1220,9 +1220,9 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
         ssize_t num_image_cols(_image_shape(0)), num_image_rows(_image_shape(1));
         float value(0.0);
         if (!_image_cache.empty()) {
-			//            bool write_lock(false);
-			//            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-			rw_mutex_reader cache_lock(_cache_mutex);
+            //            bool write_lock(false);
+            //            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+            rw_mutex_reader cache_lock(_cache_mutex);
             value = _image_cache[(y * num_image_cols) + x];
             cache_lock.release();
         }
@@ -1256,11 +1256,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                     int end(0);
                     if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
                         // use stored channel cache
-						//                        bool write_lock(false);
+                        //                        bool write_lock(false);
                         switch (axis_stokes.first) {
                             case 0: { // x
-								//                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-								rw_mutex_reader cache_lock(_cache_mutex);
+                                //                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                                rw_mutex_reader cache_lock(_cache_mutex);
                                 auto x_start = y * num_image_cols;
                                 profile.reserve(_image_shape(0));
                                 for (unsigned int j = 0; j < _image_shape(0); ++j) {
@@ -1272,8 +1272,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                 break;
                             }
                             case 1: { // y
-								//                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-								rw_mutex_reader cache_lock(_cache_mutex);
+                                //                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                                rw_mutex_reader cache_lock(_cache_mutex);
                                 profile.reserve(_image_shape(1));
                                 for (unsigned int j = 0; j < _image_shape(1); ++j) {
                                     auto idx = (j * num_image_cols) + x;
@@ -1537,9 +1537,9 @@ bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicSt
         auto& region = _regions[region_id];
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
-				//                bool write_lock(false);
-				//                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-				rw_mutex_reader cache_lock(_cache_mutex);
+                //                bool write_lock(false);
+                //                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                rw_mutex_reader cache_lock(_cache_mutex);
                 region->CalcBasicStats(channel, stokes, _image_cache, stats);
             } else {
                 std::vector<float> data;
@@ -1616,9 +1616,9 @@ bool Frame::CalcRegionHistogram(
         num_bins = (num_bins == AUTO_BIN_SIZE ? CalcAutoNumBins(region_id) : num_bins);
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
-				//                bool write_lock(false);
-				//                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-				rw_mutex_reader cache_lock(_cache_mutex);
+                //                bool write_lock(false);
+                //                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                rw_mutex_reader cache_lock(_cache_mutex);
                 region->CalcHistogram(channel, stokes, num_bins, stats, _image_cache, histogram);
             } else {
                 std::vector<float> data;
@@ -1895,9 +1895,9 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     bool smooth_successful = false;
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
-	//    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
-	rw_mutex_reader cache_lock(_cache_mutex);
-	
+    //    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
+    rw_mutex_reader cache_lock(_cache_mutex);
+
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
             index_data, _contour_settings.chunk_size, partial_contour_callback, _verbose);

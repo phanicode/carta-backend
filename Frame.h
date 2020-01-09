@@ -13,8 +13,8 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <imageanalysis/IO/AsciiAnnotationFileLine.h>
-#include <atomic>
 #include <tbb/queuing_rw_mutex.h>
+#include <atomic>
 
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/defs.pb.h>
@@ -26,12 +26,12 @@
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include "Concurrency.h"
 #include "Contouring.h"
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
 #include "Tile.h"
-#include "Concurrency.h"
 
 struct ViewSettings {
     CARTA::ImageBounds image_bounds;
@@ -259,16 +259,16 @@ private:
     ContourSettings _contour_settings;
 
     // Image data handling
-    std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex
+    std::vector<float> _image_cache; // image data for current channelIndex, stokesIndex
 
 #if __USE_TBB__
-	tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
 #else
-	std::shared_mutex _cache_mutex;
+    std::shared_mutex _cache_mutex;
 #endif
-	
-    std::mutex _image_mutex;            // only one disk access at a time
-    bool _cache_loaded;                 // channel cache is set
+
+    std::mutex _image_mutex; // only one disk access at a time
+    bool _cache_loaded;      // channel cache is set
 
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID

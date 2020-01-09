@@ -1,11 +1,11 @@
 #include "Contouring.h"
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <limits>
-#include <vector>
 #include <mutex>
-#include <atomic>
+#include <vector>
 
 #include <fmt/format.h>
 
@@ -127,11 +127,11 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     vector<int32_t>& indices, int chunk_size, ContourCallback& partial_callback) {
     const int64_t num_pixels = width * height;
     const size_t vertex_cutoff = 2 * chunk_size;
-	std::atomic_int64_t checked_pixels;
+    std::atomic_int64_t checked_pixels;
     vector<bool> visited(num_pixels);
     int64_t i, j;
-	checked_pixels = 0;
-	
+    checked_pixels = 0;
+
     auto test_for_chunk_overflow = [&]() {
         if (vertex_cutoff && vertices.size() > vertex_cutoff) {
             double progress = std::min(0.99, checked_pixels / double(num_pixels));
@@ -142,21 +142,19 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     };
 
 #pragma omp parallel
-	{
+    {
 #pragma omp task
-		{
-    // Search TopEdge
-    for (j = 0, i = 0; i < width - 1; i++) {
-        if (image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
-            indices.push_back(vertices.size());
-            TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
-            test_for_chunk_overflow();
-        }
-        checked_pixels++;
-    }
-		}
+        {// Search TopEdge
+            for (j = 0, i = 0; i < width - 1; i++){
+                if (image[(j)*width + i] < level && level <= image[(j)*width + i + 1]){indices.push_back(vertices.size());
+    TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
+    test_for_chunk_overflow();
+}
+checked_pixels++;
+}
+}
 #pragma omp task
-		{
+{
     // Search RightEdge
     for (j = 0; j < height - 1; j++) {
         if (image[(j)*width + i] < level && level <= image[(j + 1) * width + i]) {
@@ -166,9 +164,9 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         }
         checked_pixels++;
     }
-		}
+}
 #pragma omp task
-		{
+{
     // Search Bottom
     for (i--; i >= 0; i--) {
         if (image[(j)*width + i + 1] < level && level <= image[(j)*width + i]) {
@@ -178,9 +176,9 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         }
         checked_pixels++;
     }
-		}
+}
 #pragma omp task
-		{
+{
     // Search Left
     for (i = 0, j--; j >= 0; j--) {
         if (image[(j + 1) * width + i] < level && level <= image[(j)*width + i]) {
@@ -190,25 +188,25 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         }
         checked_pixels++;
     }
-		}
+}
 #pragma omp taskwait
-	}
-	std::mutex idx_mtx;
-    // Search each row of the image
+}
+std::mutex idx_mtx;
+// Search each row of the image
 #pragma parallel for
-    for (j = 1; j < height - 1; j++) {
-        for (i = 0; i < width - 1; i++) {
-            if (!visited[j * width + i] && image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
-				idx_mtx.lock();
-                indices.push_back(vertices.size());
-				idx_mtx.unlock();
-                TraceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
-                test_for_chunk_overflow();
-            }
-            checked_pixels++;
+for (j = 1; j < height - 1; j++) {
+    for (i = 0; i < width - 1; i++) {
+        if (!visited[j * width + i] && image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
+            idx_mtx.lock();
+            indices.push_back(vertices.size());
+            idx_mtx.unlock();
+            TraceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
+            test_for_chunk_overflow();
         }
+        checked_pixels++;
     }
-    partial_callback(level, 1.0, vertices, indices);
+}
+partial_callback(level, 1.0, vertices, indices);
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,

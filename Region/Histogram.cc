@@ -4,9 +4,9 @@
 
 #include <omp.h>
 
-#include <tbb/parallel_reduce.h>
-#include <tbb/parallel_for.h>
 #include <string.h>
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
 #include <mutex>
 
 using namespace carta;
@@ -28,7 +28,6 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
     _hist = tmp;
 }
 
-
 void Histogram::join(Histogram& h) { // NOLINT
     auto range = tbb::blocked_range<size_t>(0, _hist.size());
     auto loop = [this, &h](const tbb::blocked_range<size_t>& r) {
@@ -39,36 +38,34 @@ void Histogram::join(Histogram& h) { // NOLINT
     tbb::parallel_for(range, loop);
 }
 
-
 void Histogram::setup_bins(const int start, const int end) {
-	int min_stride;
-	std::function<void(std::vector<int> *, int, int)> calc_lambda = [&](std::vector<int> *hl, int lstart, int lend) {
-        std::vector<int> * hr = new std::vector<int>(_hist.size());
+    int min_stride;
+    std::function<void(std::vector<int>*, int, int)> calc_lambda = [&](std::vector<int>* hl, int lstart, int lend) {
+        std::vector<int>* hr = new std::vector<int>(_hist.size());
         if ((lend - lstart) > min_stride) {
 #pragma omp task
-			calc_lambda(hl, lstart, lstart + ((lend - lstart) / 2));
+            calc_lambda(hl, lstart, lstart + ((lend - lstart) / 2));
 #pragma omp task
-			calc_lambda(hr, lstart + ((lend - lstart) / 2), lend);
+            calc_lambda(hr, lstart + ((lend - lstart) / 2), lend);
 #pragma omp taskwait
-			std::transform(&(*hr)[0],&(*hr)[_hist.size()],&(*hl)[0],&(*hl)[0],std::plus<int>());
-			delete hr;
+            std::transform(&(*hr)[0], &(*hr)[_hist.size()], &(*hl)[0], &(*hl)[0], std::plus<int>());
+            delete hr;
         } else {
-			for (auto i = lstart; i < lend; i++) {
-				auto v = _data[i];
-				if (std::isfinite(v)) {
-					int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
-					++((*hl)[binN]);
-				}
-			}
+            for (auto i = lstart; i < lend; i++) {
+                auto v = _data[i];
+                if (std::isfinite(v)) {
+                    int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
+                    ++((*hl)[binN]);
+                }
+            }
         }
-	};
+    };
 #pragma omp parallel
-	{
+    {
 #pragma omp single
-		{
-			min_stride = _data.size() / omp_get_num_threads() + 1;
-			calc_lambda(&_hist, 0, _data.size());
-		}
-	}
+        {
+            min_stride = _data.size() / omp_get_num_threads() + 1;
+            calc_lambda(&_hist, 0, _data.size());
+        }
+    }
 }
-

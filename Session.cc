@@ -1272,11 +1272,9 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
     } else {
         curr_frame = _animation_object->_next_frame;
     }
-
     auto file_id(_animation_object->_file_id);
     if (_frames.count(file_id)) {
         const std::unique_ptr<Frame>& frame = _frames.at(file_id);
-
         try {
             std::string err_message;
             auto channel = curr_frame.channel();

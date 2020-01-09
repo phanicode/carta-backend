@@ -15,7 +15,6 @@
 #include <condition_variable>
 #include <mutex>
 
-
 #include <fmt/format.h>
 #include <signal.h>
 #include <uWS/uWS.h>

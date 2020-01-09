@@ -31,13 +31,13 @@
 #include <carta-protobuf/tiles.pb.h>
 
 #include "AnimationObject.h"
+#include "Concurrency.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Util.h"
 #include "SessionContext.h"
-#include "Concurrency.h"
+#include "Util.h"
 
 class Session {
 public:
@@ -74,7 +74,7 @@ public:
         // Empty current queue first.
         while (_set_channel_queue.try_pop(rp)) {
         }
-		rp = std::make_pair(message, request_id);
+        rp = std::make_pair(message, request_id);
         _set_channel_queue.push(rp);
     }
 
@@ -163,8 +163,9 @@ public:
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
-	//    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
-	concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
+    //    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
+    concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
+
 private:
     // File info
     void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
@@ -224,10 +225,10 @@ private:
     float _histogram_progress;
 
     // Outgoing messages
-    uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
-	//tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
-	concurrent_queue<std::vector<char>> _out_msgs;
-	
+    uS::Async* _outgoing_async; // Notification mechanism when messages are ready
+    // tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+    concurrent_queue<std::vector<char>> _out_msgs;
+
     // TBB context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;
 
