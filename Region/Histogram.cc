@@ -6,6 +6,8 @@
 
 #include <tbb/parallel_reduce.h>
 #include <tbb/parallel_for.h>
+#include <string.h>
+#include <mutex>
 
 using namespace carta;
 
@@ -39,51 +41,34 @@ void Histogram::join(Histogram& h) { // NOLINT
 
 
 void Histogram::setup_bins(const int start, const int end) {
-    int i, j, stride, buckets;
-    int** bins_bin;
-
-    auto calc_lambda = [&](int start, int lstride) {
-        int* lbins = new int[_hist.size()];
-        int end = std::min((size_t)(start + lstride), _data.size());
-        memset(lbins, 0, _hist.size() * sizeof(int));
-        for (auto i = start; i < end; i++) {
-            auto v = _data[i];
-            if (std::isfinite(v)) {
-                int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
-                ++lbins[binN];
-            }
+	int min_stride;
+	std::function<void(std::vector<int> *, int, int)> calc_lambda = [&](std::vector<int> *hl, int lstart, int lend) {
+        std::vector<int> * hr = new std::vector<int>(_hist.size());
+        if ((lend - lstart) > min_stride) {
+#pragma omp task
+			calc_lambda(hl, lstart, lstart + ((lend - lstart) / 2));
+#pragma omp task
+			calc_lambda(hr, lstart + ((lend - lstart) / 2), lend);
+#pragma omp taskwait
+			std::transform(&(*hr)[0],&(*hr)[_hist.size()],&(*hl)[0],&(*hl)[0],std::plus<int>());
+			delete hr;
+        } else {
+			for (auto i = lstart; i < lend; i++) {
+				auto v = _data[i];
+				if (std::isfinite(v)) {
+					int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
+					++((*hl)[binN]);
+				}
+			}
         }
-        return lbins;
-    };
+	};
 #pragma omp parallel
+	{
 #pragma omp single
-    { buckets = omp_get_num_threads(); }
-#pragma omp single
-    {
-        stride = _data.size() / buckets + 1;
-        bins_bin = new int*[buckets + 1];
-    }
-#pragma omp parallel for
-    for (i = 0; i < buckets; i++) {
-        bins_bin[i] = calc_lambda(i * stride, stride);
-    }
-    stride = 1;
-    do {
-#pragma omp single
-        {
-            for (i = 0; i <= (buckets - stride * 2); i += stride * 2) {
-#pragma task
-                std::transform(&(bins_bin[i + stride])[j], &(bins_bin[i + stride])[_hist.size()], &(bins_bin[i])[j], &(bins_bin[i])[j],
-                    std::plus<int>());
-            }
-            stride *= 2;
-        }
-#pragma taskwait
-    } while (stride <= buckets / 2);
-    for (i = 0; i < _hist.size(); i++) {
-        _hist[i] = bins_bin[0][i];
-    }
-    for (i = 0; i < buckets; i++) {
-        delete[] bins_bin[i];
-    }
+		{
+			min_stride = _data.size() / omp_get_num_threads() + 1;
+			calc_lambda(&_hist, 0, _data.size());
+		}
+	}
 }
+
