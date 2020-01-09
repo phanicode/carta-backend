@@ -6,8 +6,9 @@ FileSettings::FileSettings(Session* session) : _session(session) {}
 void FileSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id) {
     FileSettings::cursor_info_t settings = std::make_pair(message, request_id);
     uint32_t file_id(message.file_id());
-    bool write_lock(false); // concurrency okay
-    tbb::queuing_rw_mutex::scoped_lock lock(_cursor_mutex, write_lock);
+    //    bool write_lock(false); // concurrency okay
+    //    tbb::queuing_rw_mutex::scoped_lock lock(_cursor_mutex, write_lock);
+    rw_mutex_reader lock(_cursor_mutex);
     FileSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
     if (cursor_results != _latest_cursor.end()) { // replace with new settings
         cursor_results->second = settings;
@@ -18,8 +19,9 @@ void FileSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t re
 
 bool FileSettings::ExecuteOne(const std::string& event_name, const uint32_t file_id) {
     if (event_name.compare("SET_CURSOR") == 0) {
-        bool write_lock(true);
-        tbb::queuing_rw_mutex::scoped_lock lock(_cursor_mutex, write_lock);
+        //        bool write_lock(true);
+        //        tbb::queuing_rw_mutex::scoped_lock lock(_cursor_mutex, write_lock);
+        rw_mutex_writer lock(_cursor_mutex);
         FileSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
         if (cursor_results != _latest_cursor.end()) {
             auto cursor_info = cursor_results->second;
@@ -35,9 +37,11 @@ bool FileSettings::ExecuteOne(const std::string& event_name, const uint32_t file
 }
 
 void FileSettings::ClearSettings(const uint32_t file_id) {
-    bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock view_lock(_view_mutex, write_lock);
+    //    bool write_lock(true);
+    //    tbb::queuing_rw_mutex::scoped_lock view_lock(_view_mutex, write_lock);
+    rw_mutex_writer view_lock(_view_mutex);
     _latest_view.unsafe_erase(file_id);
-    tbb::queuing_rw_mutex::scoped_lock cursor_lock(_cursor_mutex, write_lock);
+    //    tbb::quezuing_rw_mutex::scoped_lock cursor_lock(_cursor_mutex, write_lock);
+    rw_mutex_writer cursor_lock(_cursor_mutex);
     _latest_cursor.unsafe_erase(file_id);
 }

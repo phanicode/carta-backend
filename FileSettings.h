@@ -5,6 +5,7 @@
 #define CARTA_BACKEND__FILESETTINGS_H_
 
 #include <mutex>
+#include <shared_mutex>
 #include <utility>
 
 #include <tbb/concurrent_unordered_map.h>
@@ -12,6 +13,7 @@
 
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
+#include "Concurrency.h"
 
 class Session;
 
@@ -26,7 +28,8 @@ public:
 
 private:
     Session* _session;
-    tbb::queuing_rw_mutex _view_mutex, _cursor_mutex;
+    // tbb::queuing_rw_mutex _view_mutex, _cursor_mutex;
+    std::shared_mutex _view_mutex, _cursor_mutex;
 
     // pair is <message, requestId)
     using view_info_t = std::pair<CARTA::SetImageView, uint32_t>;
