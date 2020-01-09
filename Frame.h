@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 
 #include <casacore/images/Images/SubImage.h>
@@ -30,6 +31,7 @@
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
 #include "Tile.h"
+#include "Concurrency.h"
 
 struct ViewSettings {
     CARTA::ImageBounds image_bounds;
@@ -258,7 +260,13 @@ private:
 
     // Image data handling
     std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex
-    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+
+#if __USE_TBB__
+	tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+#else
+	std::shared_mutex _cache_mutex;
+#endif
+	
     std::mutex _image_mutex;            // only one disk access at a time
     bool _cache_loaded;                 // channel cache is set
 
