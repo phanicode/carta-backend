@@ -68,8 +68,7 @@ set(LINK_LIBS
         z
         zfp
         zstd
-        tbb
-	omp
+		omp
         casa_casa
         casa_coordinates
         casa_tables
