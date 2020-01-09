@@ -27,7 +27,7 @@ bool FileSettings::ExecuteOne(const std::string& event_name, const uint32_t file
             auto cursor_info = cursor_results->second;
             CARTA::SetCursor message(cursor_info.first);
             uint32_t request_id(cursor_info.second);
-            _latest_cursor.unsafe_erase(cursor_results); // remove after retrieve settings
+            _latest_cursor.erase(cursor_results); // remove after retrieve settings
             lock.release();
             _session->OnSetCursor(message, request_id);
             return true;
@@ -40,8 +40,8 @@ void FileSettings::ClearSettings(const uint32_t file_id) {
     //    bool write_lock(true);
     //    tbb::queuing_rw_mutex::scoped_lock view_lock(_view_mutex, write_lock);
     rw_mutex_writer view_lock(_view_mutex);
-    _latest_view.unsafe_erase(file_id);
-    //    tbb::quezuing_rw_mutex::scoped_lock cursor_lock(_cursor_mutex, write_lock);
+    _latest_view.erase(file_id);
+    //    tbb::queuing_rw_mutex::scoped_lock cursor_lock(_cursor_mutex, write_lock);
     rw_mutex_writer cursor_lock(_cursor_mutex);
-    _latest_cursor.unsafe_erase(file_id);
+    _latest_cursor.erase(file_id);
 }

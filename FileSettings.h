@@ -33,15 +33,15 @@ private:
 
     // pair is <message, requestId)
     using view_info_t = std::pair<CARTA::SetImageView, uint32_t>;
-    using view_iter = tbb::concurrent_unordered_map<int, view_info_t>::iterator;
+    using view_iter = std::unordered_map<int, view_info_t>::iterator;
     // map is <fileId, view info>
-    tbb::concurrent_unordered_map<int, view_info_t> _latest_view;
+    std::unordered_map<int, view_info_t> _latest_view;
 
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
-    using cursor_iter = tbb::concurrent_unordered_map<uint32_t, cursor_info_t>::iterator;
+    using cursor_iter = std::unordered_map<uint32_t, cursor_info_t>::iterator;
     // map is <fileId, cursor info>
-    tbb::concurrent_unordered_map<uint32_t, cursor_info_t> _latest_cursor;
+    std::unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
 
 #endif // CARTA_BACKEND__FILESETTINGS_H_
