@@ -445,6 +445,18 @@ void FileExtInfoLoader::AddComputedEntries(
             gaussian_beam.getPA("deg").getValue());
         entry->set_value(beam_info);
     }
+
+    casacore::ObsInfo obs_info(image->coordinates().obsInfo());
+    if (obs_info.isTelescopePositionSet()) {
+        auto entry = extended_info->add_computed_entries();
+        entry->set_entry_type(CARTA::EntryType::STRING);
+        entry->set_name("Observatory");
+		entry->set_value(obs_info.telescope());
+        entry = extended_info->add_computed_entries();
+        entry->set_entry_type(CARTA::EntryType::STRING);
+        entry->set_name("Observatory Position");
+		entry->set_value(obs_info.telescopePositionString());
+    }
 }
 
 // ***** FITS keyword conversion *****
