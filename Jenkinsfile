@@ -165,7 +165,7 @@ pipeline {
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                              sh "./run.sh # run carta_backend in the background"
                              dir ('carta-backend-ICD-test') {
-                                 sh "git checkout hj/updateSession git submodule init && git submodule update && npm install"
+                                 sh "git checkout hj/updateSession && git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
                                      sh "./build_proto.sh"
                                      sh "pwd; ls"
