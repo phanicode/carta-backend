@@ -20,8 +20,13 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <fmt/format.h>
-#include <xmmintrin.h>
 #include <zstd.h>
+
+#if _ARM_ // defined in cmake files
+#include "arm/sse2neon.h"
+#else
+#include <xmmintrin.h>
+#endif // _ARM_
 
 #include "Carta.h"
 #include "Compression.h"

@@ -3,7 +3,12 @@
 #include <array>
 #include <cmath>
 
+#if _ARM_ // defined in cmake files
+#include "arm/sse2neon.h"
+#else
 #include <x86intrin.h>
+#endif // _ARM_
+
 #include <zfp.h>
 
 using namespace std;
