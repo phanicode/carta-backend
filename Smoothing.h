@@ -6,7 +6,7 @@
 #define CARTA_BACKEND__SMOOTHING_H_
 
 #if _ARM_ // defined in cmake files
-#include "arm/sse2neon.h"
+#include "sse2neon/sse2neon.h"
 #else
 #include <x86intrin.h>
 #endif // _ARM_

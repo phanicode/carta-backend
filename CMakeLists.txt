@@ -33,17 +33,6 @@ else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
 endif ()
 
-# Clone the ss2neon submodule
-if (EnableARM)
-    FIND_PACKAGE(Git)
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule add https://github.com/DLTcollab/sse2neon.git arm
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		    RESULT_VARIABLE GIT_RESULT)
-    if(NOT GIT_RESULT EQUAL "0")
-        message(FATAL_ERROR "Problem getting sse2neon as a submodule")  
-    endif()
-endif()
-
 # use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
 option(AuthServer "AuthServer" OFF)
 

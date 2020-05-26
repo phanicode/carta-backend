@@ -23,7 +23,7 @@
 #include <zstd.h>
 
 #if _ARM_ // defined in cmake files
-#include "arm/sse2neon.h"
+#include "sse2neon/sse2neon.h"
 #else
 #include <xmmintrin.h>
 #endif // _ARM_
