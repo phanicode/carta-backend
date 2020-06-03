@@ -296,7 +296,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
 
             delete data;
@@ -415,7 +416,8 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
 
             delete data;
