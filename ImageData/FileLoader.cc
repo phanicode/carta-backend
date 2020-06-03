@@ -296,8 +296,10 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
+// clang-format off
                 default: {
                 }
+// clang-format on/
             }
 
             delete data;
@@ -416,8 +418,10 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
+// clang-format off
                 default: {
                 }
+// clang-format on
             }
 
             delete data;
