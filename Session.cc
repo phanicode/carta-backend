@@ -19,19 +19,17 @@
 #include <fmt/format.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
+#if _ARM_ // defined in cmake files
+#include "sse2neon/sse2neon.h"
+#else
 #include <xmmintrin.h>
+#endif // _ARM_
 #include <zstd.h>
 
 #include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
-
-#if _ARM_ // defined in cmake files
-#include "sse2neon/sse2neon.h"
-#else
-#include <xmmintrin.h>
-#endif // _ARM_
 
 #include "Carta.h"
 #include "DataStream/Compression.h"

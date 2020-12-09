@@ -10,7 +10,7 @@
 #include <cmath>
 
 #if _ARM_ // defined in cmake files
-#include "sse2neon/sse2neon.h"
+#include "../sse2neon/sse2neon.h"
 #else
 #include <x86intrin.h>
 #endif // _ARM_
