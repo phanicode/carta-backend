@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
@@ -17,17 +23,20 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::string _filename;
     casacore::uInt _hdu;
     std::unique_ptr<casacore::FITSImage> _image;
 };
 
-FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
+FitsLoader::FitsLoader(const std::string& filename) : FileLoader(filename) {}
 
 void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
     if (!_image || (hdu_num != _hdu)) {
         _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
+
         _hdu = hdu_num;
         _num_dims = _image->shape().size();
     }

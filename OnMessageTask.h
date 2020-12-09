@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# OnMessageTask.h: dequeues messages and calls appropriate Session handlers
 
 #ifndef CARTA_BACKEND__ONMESSAGETASK_H_
@@ -138,6 +144,19 @@ public:
         _region_id = region_id;
     }
     ~SpectralProfileTask() = default;
+};
+
+class OnSpectralLineRequestTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SpectralLineRequest _message;
+    uint32_t _request_id;
+
+public:
+    OnSpectralLineRequestTask(Session* session, CARTA::SpectralLineRequest message, uint32_t request_id) : OnMessageTask(session) {
+        _message = message;
+        _request_id = request_id;
+    }
+    ~OnSpectralLineRequestTask() = default;
 };
 
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_

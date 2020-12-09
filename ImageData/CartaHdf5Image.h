@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# CartaHdf5Image.h : HDF5 Image class derived from casacore::ImageInterface
 
 #ifndef CARTA_BACKEND_IMAGEDATA_CARTAHDF5IMAGE_H_
@@ -59,7 +65,7 @@ private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
     inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
         CartaHdf5Image* im = static_cast<CartaHdf5Image*>(image);
-        return im->Lattice().file();
+        return im->_lattice.file();
     }
 
     bool SetUpImage();

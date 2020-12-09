@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# CartaMiriadImage.cc : specialized Image implementation to manage headers and masks
 
 #include "CartaMiriadImage.h"
@@ -71,7 +77,7 @@ void CartaMiriadImage::SetNativeType() {
         if (hdprsnt_c(_file_handle, header.c_str())) {                   // check if ctype header exists
             char ctype_value[30];
             rdhda_c(_file_handle, header.c_str(), ctype_value, "none", 30);
-            if (ctype_value != "none") { // default if not found
+            if (strncmp(ctype_value, "none", 4) != 0) { // default if not found
                 casacore::String spectral_ctype(ctype_value);
                 _native_type = casacore::SpectralCoordinate::FREQ;
                 if (spectral_ctype.contains("VRAD")) {

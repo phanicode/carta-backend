@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #ifndef CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 
@@ -17,11 +23,10 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::string _filename;
     std::unique_ptr<casacore::MIRIADImage> _image;
 };
 
-MiriadLoader::MiriadLoader(const std::string& filename) : _filename(filename) {}
+MiriadLoader::MiriadLoader(const std::string& filename) : FileLoader(filename) {}
 
 bool MiriadLoader::CanOpenFile(std::string& error) {
     // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.
@@ -53,6 +58,9 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new CartaMiriadImage(_filename));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
         _num_dims = _image->shape().size();
     }
 }
