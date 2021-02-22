@@ -1103,24 +1103,24 @@ bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state, cons
     switch (region_state.type) {
         case CARTA::RegionType::POINT: {
             // symbol [[x, y], .]
-            region_line = fmt::format("symbol [[{:.2f}pix, {:.2f}pix], .]", points[0].x(), points[0].y());
+            region_line = fmt::format("symbol [[{:.6f}pix, {:.6f}pix], .]", points[0].x(), points[0].y());
             break;
         }
         case CARTA::RegionType::RECTANGLE: {
             if (angle == 0.0) {
                 // centerbox [[x, y], [width, height]]
-                region_line = fmt::format("centerbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix]]", points[0].x(), points[0].y(),
+                region_line = fmt::format("centerbox [[{:.6f}pix, {:.6f}pix], [{:.6f}pix, {:.6f}pix]]", points[0].x(), points[0].y(),
                     points[1].x(), points[1].y());
             } else {
                 // rotbox [[x, y], [width, height], angle]
-                region_line = fmt::format("rotbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
+                region_line = fmt::format("rotbox [[{:.6f}pix, {:.6f}pix], [{:.6f}pix, {:.6f}pix], {}deg]", points[0].x(), points[0].y(),
                     points[1].x(), points[1].y(), angle);
             }
             break;
         }
         case CARTA::RegionType::ELLIPSE: {
             // ellipse [[x, y], [radius, radius], angle]
-            region_line = fmt::format("ellipse [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
+            region_line = fmt::format("ellipse [[{:.6f}pix, {:.6f}pix], [{:.6f}pix, {:.6f}pix], {}deg]", points[0].x(), points[0].y(),
                 points[1].x(), points[1].y(), angle);
             break;
         }
