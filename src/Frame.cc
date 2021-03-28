@@ -385,9 +385,33 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
         tile_ptr->set_width(tile_width);
         tile_ptr->set_height(tile_height);
         if (compression_type == CARTA::CompressionType::NONE) {
+            tile_ptr->set_max_value(1);
+            tile_ptr->set_min_value(0);
             tile_ptr->set_image_data(tile_image_data.data(), sizeof(float) * tile_image_data.size());
             return true;
         } else if (compression_type == CARTA::CompressionType::ZFP) {
+            int N = tile_image_data.size();
+            double min_val = std::numeric_limits<float>::max();
+            double max_val = std::numeric_limits<float>::lowest();
+            int num_pix;
+            for (auto v: tile_image_data) {
+                if (isfinite(v)) {
+                    min_val = min(min_val, v);
+                    max_val = max(max_val, v);
+                    num_pix++;
+                }
+            }
+
+            if (num_pix) {
+                double inv_range = 1.0 / (max_val - min_val);
+                for (auto& v: tile_image_data) {
+                    v = ((double)v - min_val) * inv_range;
+                }
+            }
+
+            tile_ptr->set_max_value(max_val);
+            tile_ptr->set_min_value(min_val);
+
             auto nan_encodings = GetNanEncodingsBlock(tile_image_data, 0, tile_width, tile_height);
             tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
 
