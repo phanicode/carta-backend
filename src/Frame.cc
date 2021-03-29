@@ -391,8 +391,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             return true;
         } else if (compression_type == CARTA::CompressionType::ZFP) {
             int N = tile_image_data.size();
-            double min_val = std::numeric_limits<float>::max();
-            double max_val = std::numeric_limits<float>::lowest();
+            float min_val = std::numeric_limits<float>::max();
+            float max_val = std::numeric_limits<float>::lowest();
             int num_pix;
             for (auto v: tile_image_data) {
                 if (isfinite(v)) {
@@ -402,10 +402,10 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 }
             }
 
-            if (num_pix && min_val != max_val && abs(min_val) > 1.0 && abs(max_val) > 1.0) {
-                double inv_range = 1.0 / (max_val - min_val);
+            if (num_pix && min_val != max_val) {
+                float inv_range = 1.0 / (max_val - min_val);
                 for (auto& v: tile_image_data) {
-                    v = ((double)v - min_val) * inv_range;
+                    v = (v - min_val) * inv_range;
                 }
             } else {
                 min_val = NAN;
