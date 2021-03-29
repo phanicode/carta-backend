@@ -402,11 +402,14 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 }
             }
 
-            if (num_pix) {
+            if (num_pix && min_val != max_val && abs(min_val) > 1.0 && abs(max_val) > 1.0) {
                 double inv_range = 1.0 / (max_val - min_val);
                 for (auto& v: tile_image_data) {
                     v = ((double)v - min_val) * inv_range;
                 }
+            } else {
+                min_val = NAN;
+                max_val = NAN;
             }
 
             tile_ptr->set_max_value(max_val);
