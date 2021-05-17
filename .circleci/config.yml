@@ -9,35 +9,27 @@ jobs:
           name: "checking the formatting of the carta_backend code"
           command: |
             ./scripts/checkformat.sh
-            echo "Finished"
       - run:
           name: "checking the copyright and licence headers in the carta_backend code"
           command: |
             ./scripts/headers.py check
-            echo "Finished"
-  build:
+  "ubuntu 18.04":
     docker:
       - image: ajmasiaa/carta-backend-builder-ubuntu-1804
     steps:
       - checkout
-      - run: |
-          git submodule update --init --recursive
-          mkdir build && cd build
-          cmake .. -Dtest=on 
-          make -j$(nproc)
-  test:
-    docker:
-      - image: ajmasiaa/carta-backend-builder-ubuntu-1804
-    steps:
-      - checkout
-      - run: |
-          cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml --gtest_filter=-"TimerTest*"
+      - run:
+          name: "build carta_backend"
+          command: |
+            git submodule update --init --recursive && mkdir build && cd build && cmake .. -Dtest=on && make -j$(nproc)
+      - run:
+          name: "run unit tests"
+          command: |
+            cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml --gtest_filter=-"TimerTest*"
       - store_test_results:
             path: /root/project/build/test
 workflows:
+  build:
     jobs:
       - "format check"
-      - build
-      - test:
-          requires:
-            - build
+      - "ubuntu 18.04"
