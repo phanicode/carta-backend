@@ -15,7 +15,7 @@ jobs:
           command: |
             ./scripts/headers.py check
             echo "Finished"
-  "ubuntu 18.04 build":
+  build:
     docker:
       - image: ajmasiaa/carta-backend-builder-ubuntu-1804
     steps:
@@ -25,7 +25,7 @@ jobs:
           mkdir build && cd build
           cmake .. -Dtest=on 
           make -j$(nproc)
-  "ubuntu 18.04 unit testing":
+  test:
     docker:
       - image: ajmasiaa/carta-backend-builder-ubuntu-1804
     steps:
@@ -37,8 +37,7 @@ jobs:
 workflows:
     jobs:
       - "format check"
-      - "ubuntu 18.04 build"
-      - "ubuntu 18.04 unit testing":
+      - build
+      - test:
           requires:
-            - "ubuntu 18.04 build"
-
+            - build
