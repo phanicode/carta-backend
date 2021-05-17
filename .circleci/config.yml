@@ -21,7 +21,7 @@ jobs:
       - run:
           name: "build carta_backend"
           command: |
-            git submodule update --init --recursive && mkdir build && cd build && cmake .. -Dtest=on && make -j$(nproc)
+            git submodule update --init --recursive && mkdir build && cd build && cmake .. -Dtest=on && make -j2
       - run:
           name: "run unit tests"
           command: |
