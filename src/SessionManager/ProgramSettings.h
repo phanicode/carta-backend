@@ -25,6 +25,7 @@ struct ProgramSettings {
     std::vector<int> port;
     int grpc_port = -1;
     int omp_thread_count = OMP_THREAD_COUNT;
+    int event_thread_count = 2;
     std::string top_level_folder = "/";
     std::string starting_folder = ".";
     std::string host = "0.0.0.0";
@@ -56,6 +57,7 @@ struct ProgramSettings {
         {"verbosity", &verbosity},
         {"grpc_port", &grpc_port},
         {"omp_threads", &omp_thread_count},
+        {"num_threads", &event_thread_count},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
         {"idle_timeout", &idle_session_wait_time}
