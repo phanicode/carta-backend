@@ -30,8 +30,6 @@
 
 using namespace std;
 
-extern void queue_task(OnMessageTask*);
-
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
 SimpleFrontendServer* http_server;
@@ -52,6 +50,9 @@ std::list<OnMessageTask*> __task_queue;
 std::mutex __task_queue_mtx;
 std::condition_variable __task_queue_cv;
 std::thread* _animation_thread;
+
+
+extern void queue_task(OnMessageTask *);
 
 // Apply ws->getUserData and return one of these
 struct PerSocketData {
@@ -312,7 +313,8 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    //                  tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    tsk = new OnAddRequiredTilesTask(session, message);
                     break;
                 }
                 case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
@@ -444,7 +446,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         //      tsk =
                         //          new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message,
                         //          head.request_id);
-                        tsk = new SpectralLineRequestTask(session, message, head.request_id);
+                        tsk = new OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
                         spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
                     }
@@ -606,8 +608,27 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
-        carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
+        //   tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
+        //   carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
+
+        auto thread_lambda = []() {
+            OnMessageTask* tsk;
+            do {
+                std::unique_lock<std::mutex> lock(__task_queue_mtx);
+                if (!(tsk = __task_queue.front())) {
+                    __task_queue_cv.wait(lock);
+                } else {
+                    __task_queue.pop_front();
+                    lock.unlock();
+                    tsk->execute();
+                }
+            } while (true);
+        };
+
+        std::list<std::thread*> workers;
+        for (int i = 0; i < settings.event_thread_count; i++) {
+            workers.push_back(new std::thread(thread_lambda));
+        }
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(settings.top_level_folder, settings.starting_folder);
