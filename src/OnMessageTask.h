@@ -93,6 +93,18 @@ public:
     ~SetHistogramRequirementsTask() = default;
 };
 
+class SpectralLineRequestTask : public OnMessageTask {
+    OnMessageTask* execute() override;
+    CARTA::SpectralLineRequest _message;
+    int _req_id;
+
+public:
+    SpectralLineRequestTask(Session* session, CARTA::SpectralLineRequest message, int request_id) : OnMessageTask(session) {
+        _req_id = request_id;
+    }
+    ~SpectralLineRequestTask() = default;
+};
+
 class AnimationTask : public OnMessageTask {
     OnMessageTask* execute() override;
 
