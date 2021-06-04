@@ -30,6 +30,8 @@
 
 using namespace std;
 
+extern void queue_task(OnMessageTask*);
+
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
 SimpleFrontendServer* http_server;
@@ -45,6 +47,13 @@ static string auth_token = "";
 carta::ProgramSettings settings;
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
+
+
+std::list<OnMessageTask*> __task_queue;
+std::mutex __task_queue_mtx;
+std::condition_variable __task_queue_cv;
+std::thread* _animation_thread;
+
 
 // Apply ws->getUserData and return one of these
 struct PerSocketData {
@@ -201,7 +210,8 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock(message.file_id());
                         if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
-                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
+//                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
+                            tsk = new SetImageChannelsTask(session);
                         }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -228,8 +238,10 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new (tbb::task::allocate_root(session->HistContext()))
-                                SetHistogramRequirementsTask(session, head, event_length, event_buf);
+  //                          tsk = new (tbb::task::allocate_root(session->HistContext()))
+  //                              SetHistogramRequirementsTask(session, head, event_length, event_buf);
+   tsk = new SetHistogramRequirementsTask(session, head, event_length, event_buf);
+
                         }
                     } else {
                         spdlog::warn("Bad SET_HISTOGRAM_REQUIREMENTS message!");
@@ -250,7 +262,12 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
-                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+//                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+    tsk = new AnimationTask(session);
+                        auto animation_lambda = [&](OnMessageTask* omt) { omt->execute(); };
+                        _animation_thread = new std::thread(animation_lambda, tsk);
+                        tsk = nullptr;
+    
                     } else {
                         spdlog::warn("Bad START_ANIMATION message!");
                     }
@@ -424,8 +441,10 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk =
-                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
+                  //      tsk =
+                  //          new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
+                        std::cerr << "SPECTRAL_LINE_REQUEST needs new impleentation" << std::endl; // XXXX
+                        tsk = nullptr;
                     } else {
                         spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
                     }
@@ -462,7 +481,8 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             }
 
             if (tsk) {
-                tbb::task::enqueue(*tsk);
+  //              tbb::task::enqueue(*tsk);
+     queue_task(tsk);
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
@@ -479,6 +499,16 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
         }
     }
 }
+
+
+
+void queue_task(OnMessageTask* tsk) {
+    std::unique_lock<std::mutex> lock(__task_queue_mtx);
+    __task_queue.push_back(tsk);
+    __task_queue_cv.notify_one();
+}
+
+
 
 void GrpcSilentLogger(gpr_log_func_args*) {}
 
