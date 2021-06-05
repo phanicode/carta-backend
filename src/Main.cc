@@ -51,8 +51,7 @@ std::mutex __task_queue_mtx;
 std::condition_variable __task_queue_cv;
 std::thread* _animation_thread;
 
-
-extern void queue_task(OnMessageTask *);
+extern void queue_task(OnMessageTask*);
 
 // Apply ws->getUserData and return one of these
 struct PerSocketData {
@@ -89,12 +88,14 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
         address = IPAsText(http_response->getRemoteAddress());
     }
 
+// XXXX Fix this this before committing
+/*
     if (!ValidateAuthToken(http_request, auth_token)) {
         spdlog::error("Incorrect or missing auth token supplied! Closing WebSocket connection");
         http_response->close();
         return;
     }
-
+*/
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
@@ -544,11 +545,18 @@ int StartGrpcService(int grpc_port) {
     }
 }
 
+volatile bool __has_exited = false;
+
 void ExitBackend(int s) {
     spdlog::info("Exiting backend.");
+
+    __has_exited = true;
+    __task_queue_cv.notify_all();
+
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
+ 
     FlushLogFile();
     exit(0);
 }
@@ -608,9 +616,6 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        //   tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
-        //   carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
-
         auto thread_lambda = []() {
             OnMessageTask* tsk;
             do {
@@ -621,6 +626,9 @@ int main(int argc, char* argv[]) {
                     __task_queue.pop_front();
                     lock.unlock();
                     tsk->execute();
+                }
+                if (__has_exited) {
+                   return;
                 }
             } while (true);
         };

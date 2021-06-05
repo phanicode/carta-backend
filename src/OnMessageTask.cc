@@ -23,16 +23,7 @@ OnMessageTask* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpatialRequirements(message);
             } else {
-                spdlog::warn("Bad SET_SPATIAL_REQUIREMENTS message!\n");
-            }
-            break;
-        }
-        case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
-            CARTA::SetSpectralRequirements message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetSpectralRequirements(message);
-            } else {
-                spdlog::warn("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
+                spdlog::warn("Bad SET_SPATIAL_REQUIREMENTS message!");
             }
             break;
         }
@@ -41,25 +32,34 @@ OnMessageTask* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
             } else {
-                spdlog::warn("Bad SET_STATS_REQUIREMENTS message!\n");
+                spdlog::warn("Bad SET_STATS_REQUIREMENTS message!");
             }
             break;
         }
-        case CARTA::EventType::SET_REGION: {
-            CARTA::SetRegion message;
+        case CARTA::EventType::MOMENT_REQUEST: {
+            CARTA::MomentRequest message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetRegion(message, _header.request_id);
+                _session->OnMomentRequest(message, _header.request_id);
             } else {
-                spdlog::warn("Bad SET_REGION message!\n");
+                spdlog::warn("Bad MOMENT_REQUEST message!");
             }
             break;
         }
-        case CARTA::EventType::REMOVE_REGION: {
-            CARTA::RemoveRegion message;
+        case CARTA::EventType::FILE_LIST_REQUEST: {
+            CARTA::FileListRequest message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnRemoveRegion(message);
+                _session->OnFileListRequest(message, _header.request_id);
             } else {
-                spdlog::warn("Bad REMOVE_REGION message!\n");
+                spdlog::warn("Bad FILE_LIST_REQUEST message!");
+            }
+            break;
+        }
+        case CARTA::EventType::CATALOG_LIST_REQUEST: {
+            CARTA::CatalogListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnCatalogFileList(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
             }
             break;
         }
@@ -140,7 +140,6 @@ OnMessageTask* OnSetContourParametersTask::execute() {
     _session->OnSetContourParameters(_message);
     return nullptr;
 }
-
 
 OnMessageTask* RegionDataStreamsTask::execute() {
     _session->RegionDataStreams(_file_id, _region_id);
