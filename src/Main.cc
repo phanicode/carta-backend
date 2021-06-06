@@ -618,19 +618,49 @@ int main(int argc, char* argv[]) {
 
         auto thread_lambda = []() {
             OnMessageTask* tsk;
-            do {
+           
+            do {  
+                tsk = nullptr;
                 std::unique_lock<std::mutex> lock(__task_queue_mtx);
                 if (!(tsk = __task_queue.front())) {
-                    __task_queue_cv.wait(lock);
+                    try {
+                        __task_queue_cv.wait(lock);
+                    }
+                    catch(...) {
+                        exit(1);
+                    }
                 } else {
                     __task_queue.pop_front();
                     lock.unlock();
+                   
                     tsk->execute();
+                   
+                    
                 }
+                
+                if(!tsk) {
+                         if(__has_exited) {
+                             return;
+                         } else {
+
+                            spdlog::error("Worker thread exited with null task");
+                            exit(0);
+                         }
+                    }
+            } while (true);
+            /*
+            throw;
+            }
+            catch (...) {
                 if (__has_exited) {
                    return;
                 }
-            } while (true);
+                else {
+                    spdlog::error("Worker thread exited with exception");
+                    exit(0);
+                }
+                */
+            
         };
 
         std::list<std::thread*> workers;
