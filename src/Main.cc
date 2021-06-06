@@ -89,14 +89,14 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
         address = IPAsText(http_response->getRemoteAddress());
     }
 
-// XXXX Fix this this before committing
-/*
-    if (!ValidateAuthToken(http_request, auth_token)) {
-        spdlog::error("Incorrect or missing auth token supplied! Closing WebSocket connection");
-        http_response->close();
-        return;
-    }
-*/
+    // XXXX Fix this this before committing
+    /*
+        if (!ValidateAuthToken(http_request, auth_token)) {
+            spdlog::error("Incorrect or missing auth token supplied! Closing WebSocket connection");
+            http_response->close();
+            return;
+        }
+    */
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
@@ -554,14 +554,14 @@ void ExitBackend(int s) {
     __has_exited = true;
     __task_queue_cv.notify_all();
 
-        while( !__workers.empty() ) {
-           __workers.pop_front();
-        }     
+    while (!__workers.empty()) {
+        __workers.pop_front();
+    }
 
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
- 
+
     FlushLogFile();
     exit(0);
 }
@@ -623,30 +623,30 @@ int main(int argc, char* argv[]) {
 
         auto thread_lambda = []() {
             OnMessageTask* tsk;
-           
-            do {  
+
+            do {
                 tsk = nullptr;
                 std::unique_lock<std::mutex> lock(__task_queue_mtx);
                 if (!(tsk = __task_queue.front())) {
-                        __task_queue_cv.wait(lock);
+                    __task_queue_cv.wait(lock);
                 } else {
                     __task_queue.pop_front();
                     lock.unlock();
-                   
+
                     tsk->execute();
                 }
-                if(!tsk) {
-                         if(__has_exited) {
-                             return;
-                         } else {
-                            spdlog::error("Worker thread exited with null task");
-                            exit(0);
-                         }
+                if (!tsk) {
+                    if (__has_exited) {
+                        return;
+                    } else {
+                        spdlog::error("Worker thread exited with null task");
+                        exit(0);
                     }
-            } while (true);           
+                }
+            } while (true);
         };
 
-    // Start worker threads
+        // Start worker threads
         for (int i = 0; i < settings.event_thread_count; i++) {
             __workers.push_back(new std::thread(thread_lambda));
         }
