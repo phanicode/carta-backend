@@ -50,6 +50,7 @@ std::list<OnMessageTask*> __task_queue;
 std::mutex __task_queue_mtx;
 std::condition_variable __task_queue_cv;
 std::thread* _animation_thread;
+std::list<std::thread*> __workers;
 
 extern void queue_task(OnMessageTask*);
 
@@ -553,6 +554,10 @@ void ExitBackend(int s) {
     __has_exited = true;
     __task_queue_cv.notify_all();
 
+        while( !__workers.empty() ) {
+           __workers.pop_front();
+        }     
+
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
@@ -623,49 +628,27 @@ int main(int argc, char* argv[]) {
                 tsk = nullptr;
                 std::unique_lock<std::mutex> lock(__task_queue_mtx);
                 if (!(tsk = __task_queue.front())) {
-                    try {
                         __task_queue_cv.wait(lock);
-                    }
-                    catch(...) {
-                        exit(1);
-                    }
                 } else {
                     __task_queue.pop_front();
                     lock.unlock();
                    
                     tsk->execute();
-                   
-                    
                 }
-                
                 if(!tsk) {
                          if(__has_exited) {
                              return;
                          } else {
-
                             spdlog::error("Worker thread exited with null task");
                             exit(0);
                          }
                     }
-            } while (true);
-            /*
-            throw;
-            }
-            catch (...) {
-                if (__has_exited) {
-                   return;
-                }
-                else {
-                    spdlog::error("Worker thread exited with exception");
-                    exit(0);
-                }
-                */
-            
+            } while (true);           
         };
 
-        std::list<std::thread*> workers;
+    // Start worker threads
         for (int i = 0; i < settings.event_thread_count; i++) {
-            workers.push_back(new std::thread(thread_lambda));
+            __workers.push_back(new std::thread(thread_lambda));
         }
 
         // One FileListHandler works for all sessions.
