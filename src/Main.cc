@@ -349,7 +349,9 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
+                    //                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session,
+                    //                    message);
+                    tsk = new OnSetContourParametersTask(session, message);
                     break;
                 }
                 case CARTA::EventType::SCRIPTING_RESPONSE: {
@@ -480,7 +482,9 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
                     memcpy(message_buffer, event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
+                    //                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head,
+                    //                    event_length, message_buffer);
+                    tsk = new MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
