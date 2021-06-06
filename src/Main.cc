@@ -639,13 +639,9 @@ int main(int argc, char* argv[]) {
 
                     tsk->execute();
                 }
-                if (!tsk) {
-                    if (__has_exited) {
-                        return;
-                    } else {
-                        spdlog::error("Worker thread exited with null task");
-                        exit(0);
-                    }
+
+                if (__has_exited) {
+                    return;
                 }
             } while (true);
         };
