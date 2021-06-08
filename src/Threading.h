@@ -8,6 +8,7 @@
 #define __THREADING_H__
 
 #include <omp.h>
+#include <OnMessageTask.h>
 
 #define MAX_TILING_TASKS 8
 
@@ -28,6 +29,11 @@ class ThreadManager {
 public:
     static void ApplyThreadLimit();
     static void SetThreadLimit(int count);
+
+    static void StartEventHandlingThreads(int num_threads);
+    static void QueueTask(OnMessageTask*);
+
+    static void ExitThreads();
 };
 } // namespace carta
 

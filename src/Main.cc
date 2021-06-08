@@ -46,13 +46,7 @@ carta::ProgramSettings settings;
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
 
-std::list<OnMessageTask*> __task_queue;
-std::mutex __task_queue_mtx;
-std::condition_variable __task_queue_cv;
 std::thread* _animation_thread;
-std::list<std::thread*> __workers;
-
-extern void queue_task(OnMessageTask*);
 
 // Apply ws->getUserData and return one of these
 struct PerSocketData {
@@ -490,7 +484,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
 
             if (tsk) {
                 //              tbb::task::enqueue(*tsk);
-                queue_task(tsk);
+                ThreadManager::QueueTask(tsk);
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
@@ -506,12 +500,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             }
         }
     }
-}
-
-void queue_task(OnMessageTask* tsk) {
-    std::unique_lock<std::mutex> lock(__task_queue_mtx);
-    __task_queue.push_back(tsk);
-    __task_queue_cv.notify_one();
 }
 
 void GrpcSilentLogger(gpr_log_func_args*) {}
@@ -550,17 +538,10 @@ int StartGrpcService(int grpc_port) {
     }
 }
 
-volatile bool __has_exited = false;
-
 void ExitBackend(int s) {
     spdlog::info("Exiting backend.");
 
-    __has_exited = true;
-    __task_queue_cv.notify_all();
-
-    while (!__workers.empty()) {
-        __workers.pop_front();
-    }
+    ThreadManager::ExitThreads();
 
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
@@ -625,31 +606,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        auto thread_lambda = []() {
-            OnMessageTask* tsk;
-
-            do {
-                tsk = nullptr;
-                std::unique_lock<std::mutex> lock(__task_queue_mtx);
-                if (!(tsk = __task_queue.front())) {
-                    __task_queue_cv.wait(lock);
-                } else {
-                    __task_queue.pop_front();
-                    lock.unlock();
-
-                    tsk->execute();
-                }
-
-                if (__has_exited) {
-                    return;
-                }
-            } while (true);
-        };
-
-        // Start worker threads
-        for (int i = 0; i < settings.event_thread_count; i++) {
-            __workers.push_back(new std::thread(thread_lambda));
-        }
+        ThreadManager::StartEventHandlingThreads(settings.event_thread_count);
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(settings.top_level_folder, settings.starting_folder);
