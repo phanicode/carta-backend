@@ -44,7 +44,6 @@
 #include <xmmintrin.h>
 #endif
 
-
 int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
