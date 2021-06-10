@@ -9,6 +9,10 @@
 
 #include <OnMessageTask.h>
 #include <omp.h>
+#include <list>
+#include <mutex>
+#include <thread>
+
 
 #define MAX_TILING_TASKS 8
 
@@ -25,6 +29,11 @@
 namespace carta {
 class ThreadManager {
     static int _omp_thread_count;
+    static std::list<OnMessageTask*> _task_queue;
+    static std::mutex _task_queue_mtx;
+    static std::condition_variable _task_queue_cv;
+    static std::list<std::thread*> _workers;
+    static volatile bool _has_exited;
 
 public:
     static void ApplyThreadLimit();

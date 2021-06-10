@@ -5,13 +5,14 @@
 */
 
 #include "Threading.h"
-#include <list>
-#include <mutex>
-#include <thread>
-#include "OnMessageTask.h"
 
 namespace carta {
 int ThreadManager::_omp_thread_count = 0;
+std::list<OnMessageTask*> ThreadManager::_task_queue;
+std::mutex ThreadManager::_task_queue_mtx;
+std::condition_variable ThreadManager::_task_queue_cv;
+std::list<std::thread*> ThreadManager::_workers;
+volatile bool ThreadManager::_has_exited = false;
 
 void ThreadManager::ApplyThreadLimit() {
     // Skip application if we are already inside an OpenMP parallel block
@@ -31,16 +32,10 @@ void ThreadManager::SetThreadLimit(int count) {
     ApplyThreadLimit();
 }
 
-std::list<OnMessageTask*> __task_queue;
-std::mutex __task_queue_mtx;
-std::condition_variable __task_queue_cv;
-std::list<std::thread*> __workers;
-volatile bool __has_exited = false;
-
 void ThreadManager::QueueTask(OnMessageTask* tsk) {
-    std::unique_lock<std::mutex> lock(__task_queue_mtx);
-    __task_queue.push_back(tsk);
-    __task_queue_cv.notify_one();
+    std::unique_lock<std::mutex> lock(_task_queue_mtx);
+    _task_queue.push_back(tsk);
+    _task_queue_cv.notify_one();
 }
 
 void ThreadManager::StartEventHandlingThreads(int num_threads) {
@@ -48,17 +43,16 @@ void ThreadManager::StartEventHandlingThreads(int num_threads) {
         OnMessageTask* tsk;
 
         do {
-            tsk = nullptr;
-            std::unique_lock<std::mutex> lock(__task_queue_mtx);
-            if (!(tsk = __task_queue.front())) {
-                __task_queue_cv.wait(lock);
+            std::unique_lock<std::mutex> lock(_task_queue_mtx);
+            if (!(tsk = _task_queue.front())) {
+                _task_queue_cv.wait(lock);
             } else {
-                __task_queue.pop_front();
+                _task_queue.pop_front();
                 lock.unlock();
                 tsk->execute();
             }
 
-            if (__has_exited) {
+            if (_has_exited) {
                 return;
             }
         } while (true);
@@ -66,16 +60,16 @@ void ThreadManager::StartEventHandlingThreads(int num_threads) {
 
     // Start worker threads
     for (int i = 0; i < num_threads; i++) {
-        __workers.push_back(new std::thread(thread_lambda));
+        _workers.push_back(new std::thread(thread_lambda));
     }
 }
 
 void ThreadManager::ExitThreads() {
-    __has_exited = true;
-    __task_queue_cv.notify_all();
+    _has_exited = true;
+    _task_queue_cv.notify_all();
 
-    while (!__workers.empty()) {
-        __workers.pop_front();
+    while (!_workers.empty()) {
+        _workers.pop_front();
     }
 }
 
