@@ -13,7 +13,6 @@
 #include <mutex>
 #include <thread>
 
-
 #define MAX_TILING_TASKS 8
 
 #if __has_include(<parallel/algorithm>)
